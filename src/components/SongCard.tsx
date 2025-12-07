@@ -56,7 +56,7 @@ export function SongCard({ song, showTransfer, currentPlaylistId }: SongCardProp
             {playlists.map((playlist) => (
               <DropdownMenuItem
                 key={playlist.id}
-                onClick={() => addSongToPlaylist(song, playlist.id)}
+                onClick={() => addSongToPlaylist(song.id, playlist.id)}
               >
                 Add to {playlist.name}
               </DropdownMenuItem>
@@ -68,25 +68,18 @@ export function SongCard({ song, showTransfer, currentPlaylistId }: SongCardProp
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8">
-                <ArrowRightLeft className="h-4 w-4" />
+                <Plus className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>Transfer to...</DropdownMenuSubTrigger>
-                <DropdownMenuSubContent>
-                  {playlists
-                    .filter((p) => p.id !== currentPlaylistId)
-                    .map((playlist) => (
-                      <DropdownMenuItem
-                        key={playlist.id}
-                        onClick={() => transferSong(song.id, currentPlaylistId, playlist.id)}
-                      >
-                        {playlist.name}
-                      </DropdownMenuItem>
-                    ))}
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
+              {playlists.map((playlist) => (
+                <DropdownMenuItem
+                  key={playlist.id}
+                  onClick={() => addSongToPlaylist(Number(song.id), String(playlist.id))}
+                >
+                  Add to {playlist.name}
+                </DropdownMenuItem>
+              ))}
             </DropdownMenuContent>
           </DropdownMenu>
         )}

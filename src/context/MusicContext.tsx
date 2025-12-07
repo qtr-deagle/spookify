@@ -20,7 +20,7 @@ interface MusicContextType {
   setSelectedPlaylist: (playlist: Playlist | null) => void;
   setSearchQuery: (query: string) => void;
 
-  addSongToPlaylist: (song: Song, playlistId: string) => void;
+  addSongToPlaylist: (songId: number, playlistId: string) => void;
   removeSongFromPlaylist: (songId: string, playlistId: string) => void;
   transferSong: (songId: string, fromPlaylistId: string, toPlaylistId: string) => void;
   createPlaylist: (name: string) => void;
@@ -59,8 +59,35 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       const res = await fetch(`/api/getSongs.php?playlist_id=${selectedPlaylist.id}`);
       const data = await res.json();
       setSongs(data);
+      setSelectedPlaylist((prev) => prev ? { ...prev, songs: data } : prev); // ✅ inject songs
     };
     fetchSongs();
+  }, [selectedPlaylist]);
+
+  useEffect(() => {
+    if (!selectedPlaylist) {
+      const fetchAllSongs = async () => {
+        try {
+          const res = await fetch("/api/getSongs.php");
+          const data = await res.json();
+          setSongs(data);
+        } catch (err) {
+          console.error("Failed to load songs:", err);
+        }
+      };
+      fetchAllSongs();
+    }
+  }, [selectedPlaylist]);
+
+  useEffect(() => {
+    if (!selectedPlaylist) {
+      const fetchAllSongs = async () => {
+        const res = await fetch("/api/getSongs.php");
+        const data = await res.json();
+        setSongs(data);
+      };
+      fetchAllSongs();
+    }
   }, [selectedPlaylist]);
 
   const createPlaylist = async (name: string) => {
@@ -85,6 +112,39 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       setSelectedPlaylist(null);
     }
   };
+
+  // inside MusicProvider
+  const transferSong = async (songId: number, fromPlaylistId: number, toPlaylistId: number) => {
+    await fetch("/api/transferSong.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ song_id: songId, from_playlist_id: fromPlaylistId, to_playlist_id: toPlaylistId }),
+    });
+
+    // Refresh songs for the current playlist
+    if (Number(selectedPlaylist?.id) === fromPlaylistId) {
+      const res = await fetch(`/api/getSongs.php?playlist_id=${fromPlaylistId}`);
+      const data = await res.json();
+      setSongs(data);
+      setSelectedPlaylist((prev) => prev ? { ...prev, songs: data } : prev);
+    }
+  };
+
+  const addSongToPlaylist = async (songId: number, playlistId: string) => {
+    await fetch("/api/addSongToPlaylist.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ song_id: songId, playlist_id: playlistId }),
+    });
+
+    if (selectedPlaylist?.id === playlistId) {
+      const res = await fetch(`/api/getSongs.php?playlist_id=${playlistId}`);
+      const data = await res.json();
+      setSongs(data);
+      setSelectedPlaylist((prev) => prev ? { ...prev, songs: data } : prev);
+    }
+  };
+
 
   return (
     <MusicContext.Provider

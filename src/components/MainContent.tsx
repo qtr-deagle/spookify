@@ -5,15 +5,14 @@ import { Music } from "lucide-react";
 export function MainContent() {
   const { songs, selectedPlaylist, searchQuery } = useMusic();
 
-  const displaySongs = selectedPlaylist ? selectedPlaylist.songs : songs;
-  
+  const displaySongs = selectedPlaylist ? songs : songs;
+
+
   const filteredSongs = displaySongs.filter((song) => {
     const query = searchQuery.toLowerCase();
-    return (
-      song.title.toLowerCase().includes(query) ||
-      song.artist.toLowerCase().includes(query) ||
-      song.album.toLowerCase().includes(query)
-    );
+    return [song.title, song.artist, song.album]
+      .filter(Boolean)
+      .some((field) => field.toLowerCase().includes(query));
   });
 
   return (
@@ -24,8 +23,8 @@ export function MainContent() {
         </h1>
         <p className="text-muted-foreground">
           {selectedPlaylist
-            ? `${selectedPlaylist.songs.length} songs in this playlist`
-            : "Discover new music"}
+            ? `${songs.length} songs in this playlist`
+            : `${songs.length} songs available`}
         </p>
       </div>
 

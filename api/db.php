@@ -13,7 +13,10 @@ $options = [
 
 try {
   $pdo = new PDO($dsn, $user, $pass, $options);
-} catch (\PDOException $e) {
-  echo json_encode(["status" => "error", "message" => "Database connection failed"]);
+} catch (PDOException $e) {
+  echo json_encode([
+    "status" => "error",
+    "message" => "Database connection failed: " . $e->getMessage()
+  ]);
   exit;
 }
