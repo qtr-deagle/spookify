@@ -90,13 +90,13 @@ export function Sidebar() {
               <div className="flex-1">
                 <p className="font-medium text-sm truncate">{playlist.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {playlist.songs?.length ?? 0} songs
+                  {playlist.song_count ?? playlist.songs?.length ?? 0} songs
                 </p>
               </div>
             </button>
 
             <button
-              onClick={() => deletePlaylist(playlist.id)}
+              onClick={() => deletePlaylist(String(playlist.id))}
               className="text-muted-foreground hover:text-destructive transition-colors"
               title="Delete playlist"
             >

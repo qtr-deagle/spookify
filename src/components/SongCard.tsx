@@ -56,7 +56,7 @@ export function SongCard({ song, showTransfer, currentPlaylistId }: SongCardProp
             {playlists.map((playlist) => (
               <DropdownMenuItem
                 key={playlist.id}
-                onClick={() => addSongToPlaylist(Number(song.id), String(playlist.id))}
+                onClick={() => transferSong(song.id, currentPlaylistId, playlist.id)}
               >
                 Add to {playlist.name}
               </DropdownMenuItem>
@@ -80,9 +80,9 @@ export function SongCard({ song, showTransfer, currentPlaylistId }: SongCardProp
                     key={playlist.id}
                     onClick={() =>
                       transferSong(
-                        String(song.id),
-                        String(currentPlaylistId),
-                        String(playlist.id)
+                        Number(song.id),                // song to move
+                        Number(currentPlaylistId),      // from this playlist
+                        Number(playlist.id)             // to target playlist
                       )
                     }
                   >

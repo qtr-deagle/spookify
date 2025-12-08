@@ -14,6 +14,7 @@ export interface Playlist {
   name: string;
   songs: Song[];
   cover?: string;
+  song_count?: number;
 }
 
 export interface User {

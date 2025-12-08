@@ -14,7 +14,14 @@ export function PlayerBar() {
     setProgress,
     playNext,
     playPrevious,
+    seek,
   } = useMusic();
+
+  function formatTime(seconds: number) {
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  }
 
   return (
     <footer className="h-24 bg-player-bg border-t border-border flex items-center justify-between px-6">
@@ -24,7 +31,6 @@ export function PlayerBar() {
           <>
             <img
               src={currentSong.cover}
-              alt={currentSong.album}
               className="w-14 h-14 rounded object-cover"
             />
             <div>
@@ -79,18 +85,18 @@ export function PlayerBar() {
         {/* Progress Bar */}
         <div className="w-full flex items-center gap-3">
           <span className="text-xs text-muted-foreground w-10 text-right">
-            {Math.floor(progress * 0.036)}:{String(Math.floor((progress * 2.16) % 60)).padStart(2, "0")}
+            {formatTime(progress)}
           </span>
           <Slider
             value={[progress]}
-            max={100}
+            max={currentSong?.duration || 0}
             step={1}
-            onValueChange={([val]) => setProgress(val)}
+            onValueChange={([val]) => seek(val)} // ✅ now updates audioRef
             className="flex-1"
             disabled={!currentSong}
           />
           <span className="text-xs text-muted-foreground w-10">
-            {currentSong?.duration || "0:00"}
+            {formatTime(currentSong?.duration || 0)}
           </span>
         </div>
       </div>
@@ -113,6 +119,6 @@ export function PlayerBar() {
           className="w-24"
         />
       </div>
-    </footer> 
+    </footer>
   );
 }
