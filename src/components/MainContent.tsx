@@ -7,7 +7,6 @@ export function MainContent() {
 
   const displaySongs = selectedPlaylist ? songs : songs;
 
-
   const filteredSongs = displaySongs.filter((song) => {
     const query = searchQuery.toLowerCase();
     return [song.title, song.artist, song.album]

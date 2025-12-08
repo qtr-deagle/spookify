@@ -1,22 +1,23 @@
 export interface Song {
   id: string;
   title: string;
-  artist: string;   // resolved via join
-  album: string;    // resolved via join
+  artist_id: number;   // resolved via join
+  album_id: number;
+  artist: string;    // resolved via join
   duration: number; // keep numeric for math
   cover: string;
   url: string;
 }
 
 export interface Playlist {
-  id: string;
+  id: number;
   name: string;
   songs: Song[];
   cover?: string;
 }
 
 export interface User {
-  id: string;
+  id: number;
   username: string;
   email: string;
 }

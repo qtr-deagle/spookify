@@ -6,9 +6,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -32,7 +29,7 @@ export function SongCard({ song, showTransfer, currentPlaylistId }: SongCardProp
       <div className="relative mb-4">
         <img
           src={song.cover}
-          alt={song.album}
+          alt={song.title}
           className="w-full aspect-square object-cover rounded-md shadow-lg"
         />
         <button
@@ -44,9 +41,11 @@ export function SongCard({ song, showTransfer, currentPlaylistId }: SongCardProp
       </div>
 
       <h3 className="font-semibold text-foreground truncate mb-1">{song.title}</h3>
+      {/* You can resolve artist_id → artist name via join or lookup */}
       <p className="text-sm text-muted-foreground truncate">{song.artist}</p>
 
       <div className="flex items-center gap-2 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
+        {/* Add to Playlist */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -57,7 +56,7 @@ export function SongCard({ song, showTransfer, currentPlaylistId }: SongCardProp
             {playlists.map((playlist) => (
               <DropdownMenuItem
                 key={playlist.id}
-                onClick={() => addSongToPlaylist(song.id, playlist.id)}
+                onClick={() => addSongToPlaylist(Number(song.id), String(playlist.id))}
               >
                 Add to {playlist.name}
               </DropdownMenuItem>
@@ -65,22 +64,31 @@ export function SongCard({ song, showTransfer, currentPlaylistId }: SongCardProp
           </DropdownMenuContent>
         </DropdownMenu>
 
+        {/* Transfer Song between playlists */}
         {showTransfer && currentPlaylistId && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8">
-                <Plus className="h-4 w-4" />
+                <ArrowRightLeft className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              {playlists.map((playlist) => (
-                <DropdownMenuItem
-                  key={playlist.id}
-                  onClick={() => addSongToPlaylist(Number(song.id), String(playlist.id))}
-                >
-                  Add to {playlist.name}
-                </DropdownMenuItem>
-              ))}
+              {playlists
+                .filter((p) => String(p.id) !== currentPlaylistId)
+                .map((playlist) => (
+                  <DropdownMenuItem
+                    key={playlist.id}
+                    onClick={() =>
+                      transferSong(
+                        String(song.id),
+                        String(currentPlaylistId),
+                        String(playlist.id)
+                      )
+                    }
+                  >
+                    Move to {playlist.name}
+                  </DropdownMenuItem>
+                ))}
             </DropdownMenuContent>
           </DropdownMenu>
         )}

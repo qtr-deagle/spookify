@@ -1,62 +1,26 @@
-import { useEffect, useRef } from "react";
 import { useMusic } from "@/context/MusicContext";
+import { useEffect, useRef } from "react";
 
 export function AudioPlayer() {
-    const {
-        currentSong,
-        isPlaying,
-        setIsPlaying,
-        volume,
-        setProgress,
-    } = useMusic();
+    const { currentSong, isPlaying, volume } = useMusic();
+    const audioRef = useRef<HTMLAudioElement | null>(null);
 
-    const audioRef = useRef<HTMLAudioElement>(null);
-
-    // Handle playback when song or play state changes
     useEffect(() => {
-        const audio = audioRef.current;
-        if (!audio || !currentSong?.url) return;
+        if (!audioRef.current || !currentSong) return;
 
-        audio.src = currentSong.url;
-        audio.volume = volume / 100; // ✅ set volume before play
-        audio.load();
-
+        audioRef.current.src = `/${currentSong.url}`; // ✅ ensure correct path
         if (isPlaying) {
-            audio.play().catch(console.error);
+            audioRef.current.play();
         } else {
-            audio.pause();
+            audioRef.current.pause();
         }
-    }, [currentSong, isPlaying, volume]);
+    }, [currentSong, isPlaying]);
 
-    // Sync volume
     useEffect(() => {
         if (audioRef.current) {
-            audioRef.current.volume = volume / 70;
-            console.log("Volume set to:", volume);
+            audioRef.current.volume = volume / 100;
         }
     }, [volume]);
 
-    // Sync progress
-    useEffect(() => {
-        const audio = audioRef.current;
-        if (!audio) return;
-
-        const updateProgress = () => {
-            const progress = (audio.currentTime / audio.duration) * 100 || 0;
-            setProgress(progress);
-        };
-
-        audio.addEventListener("timeupdate", updateProgress);
-        return () => {
-            audio.removeEventListener("timeupdate", updateProgress);
-        };
-    }, [setProgress]);
-
-    return (
-        <audio
-            ref={audioRef}
-            onEnded={() => setIsPlaying(false)}
-            style={{ display: "none" }}
-        />
-    );
+    return <audio ref={audioRef} />;
 }

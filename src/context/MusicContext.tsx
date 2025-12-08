@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from "react";
 import { Song, Playlist, User } from "@/types/music";
 
 interface MusicContextType {
@@ -63,6 +63,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     };
     fetchSongs();
   }, [selectedPlaylist]);
+
 
   useEffect(() => {
     if (!selectedPlaylist) {
@@ -145,6 +146,40 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // 🔊 Handle play/pause when currentSong or isPlaying changes
+  useEffect(() => {
+    if (!audioRef.current || !currentSong) return;
+
+    audioRef.current.src = `/${currentSong.url}`; // ✅ ensure leading slash
+    if (isPlaying) {
+      audioRef.current.play().catch((err) => console.error("Playback failed:", err));
+    } else {
+      audioRef.current.pause();
+    }
+  }, [currentSong, isPlaying]);
+
+  // 🔊 Handle volume changes
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume / 100;
+    }
+  }, [volume]);
+
+  // 🔊 Track progress
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const updateProgress = () => setProgress(audio.currentTime);
+    audio.addEventListener("timeupdate", updateProgress);
+
+    return () => {
+      audio.removeEventListener("timeupdate", updateProgress);
+    };
+  }, []);
 
   return (
     <MusicContext.Provider
@@ -165,16 +200,17 @@ export function MusicProvider({ children }: { children: ReactNode }) {
         setUser,
         setSelectedPlaylist,
         setSearchQuery,
-        addSongToPlaylist: () => { }, // implement with API
-        removeSongFromPlaylist: () => { }, // implement with API
-        transferSong: () => { }, // implement with API
-        createPlaylist,
-        playNext: () => { },
-        playPrevious: () => { },
-        deletePlaylist,
+        addSongToPlaylist: () => {},
+        removeSongFromPlaylist: () => {},
+        transferSong: () => {},
+        createPlaylist: () => {},
+        playNext: () => {},
+        playPrevious: () => {},
+        deletePlaylist: () => {},
       }}
     >
       {children}
+      <audio ref={audioRef} />
     </MusicContext.Provider>
   );
 }

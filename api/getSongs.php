@@ -7,14 +7,19 @@ $playlist_id = $_GET["playlist_id"] ?? null;
 try {
   if ($playlist_id) {
     $stmt = $pdo->prepare("
-      SELECT s.* 
-      FROM songs s
-      JOIN playlist_songs ps ON s.id = ps.song_id
-      WHERE ps.playlist_id = ?
-    ");
+    SELECT s.*, a.name AS artist
+    FROM songs s
+    JOIN playlist_songs ps ON s.id = ps.song_id
+    JOIN artists a ON s.artist_id = a.id
+    WHERE ps.playlist_id = ?
+  ");
     $stmt->execute([$playlist_id]);
   } else {
-    $stmt = $pdo->query("SELECT * FROM songs");
+    $stmt = $pdo->query("
+    SELECT s.*, a.name AS artist
+    FROM songs s
+    JOIN artists a ON s.artist_id = a.id
+  ");
   }
 
   $songs = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -23,4 +28,3 @@ try {
   http_response_code(500);
   echo json_encode(["error" => $e->getMessage()]);
 }
-?>
