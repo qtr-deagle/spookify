@@ -7,6 +7,7 @@ export interface Song {
   duration: number; // keep numeric for math
   cover: string;
   url: string;
+  genre?: string;
 }
 
 export interface Playlist {
@@ -21,4 +22,13 @@ export interface User {
   id: number;
   username: string;
   email: string;
+}
+
+export interface Activity {
+  id: string;
+  type: "add_song" | "remove_song" | "create_playlist" | "delete_playlist";
+  message: string;
+  timestamp: Date;
+  songTitle?: string;
+  playlistName?: string;
 }

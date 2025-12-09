@@ -5,8 +5,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import { AudioPlayer } from "@/components/AudioPlayer"; // adjust path as needed
-import { MusicProvider } from "@/context/MusicContext"; // adjust path as needed
+import { AudioPlayer } from "@/components/AudioPlayer";
+import { MusicProvider } from "@/context/MusicContext";
+import { NavigationProvider } from "@/context/NavigationContext";
 
 const queryClient = new QueryClient();
 
@@ -16,13 +17,15 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <MusicProvider> {/* ✅ Wrap everything inside here */}
-          <AudioPlayer />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </MusicProvider>
+        <NavigationProvider>
+          <MusicProvider>
+            <AudioPlayer />
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </MusicProvider>
+        </NavigationProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

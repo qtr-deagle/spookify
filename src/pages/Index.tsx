@@ -4,26 +4,23 @@ import { Sidebar } from "@/components/Sidebar";
 import { MainContent } from "@/components/MainContent";
 import { PlayerBar } from "@/components/PlayerBar";
 import { AuthModal } from "@/components/AuthModal";
-import { MusicProvider } from "@/context/MusicContext";
 
 const Index = () => {
   const [authModalOpen, setAuthModalOpen] = useState(false);
 
   return (
-    <MusicProvider>
-      <div className="h-screen flex flex-col bg-background overflow-hidden">
-        <Navbar onAuthClick={() => setAuthModalOpen(true)} />
-        
-        <div className="flex-1 flex overflow-hidden">
-          <Sidebar />
-          <MainContent />
-        </div>
-        
-        <PlayerBar />
-        
-        <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
+      <Navbar onAuthClick={() => setAuthModalOpen(true)} />
+      
+      <div className="flex-1 flex overflow-hidden">
+        <Sidebar onAuthRequired={() => setAuthModalOpen(true)} />
+        <MainContent onAuthRequired={() => setAuthModalOpen(true)} />
       </div>
-    </MusicProvider>
+      
+      <PlayerBar />
+      
+      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+    </div>
   );
 };
 

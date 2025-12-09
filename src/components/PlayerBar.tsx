@@ -15,6 +15,8 @@ export function PlayerBar() {
     playNext,
     playPrevious,
     seek,
+    setCurrentView,
+    setFilterByArtist,
   } = useMusic();
 
   function formatTime(seconds: number) {
@@ -35,7 +37,15 @@ export function PlayerBar() {
             />
             <div>
               <p className="font-medium text-foreground truncate">{currentSong.title}</p>
-              <p className="text-sm text-muted-foreground truncate">{currentSong.artist}</p>
+              <p
+                className="text-sm text-muted-foreground truncate hover:text-foreground cursor-pointer transition-colors duration-200"
+                onClick={() => {
+                  setCurrentView("browse");
+                  setFilterByArtist(currentSong.artist);
+                }}
+              >
+                {currentSong.artist}
+              </p>
             </div>
           </>
         ) : (
@@ -90,8 +100,8 @@ export function PlayerBar() {
           <Slider
             value={[progress]}
             max={currentSong?.duration || 0}
-            step={1}
-            onValueChange={([val]) => seek(val)} // ✅ now updates audioRef
+            step={0.1}
+            onValueChange={([val]) => seek(val)}
             className="flex-1"
             disabled={!currentSong}
           />

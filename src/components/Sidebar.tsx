@@ -4,10 +4,22 @@ import { useMusic } from "@/context/MusicContext";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 
-export function Sidebar() {
-  const { playlists, selectedPlaylist, setSelectedPlaylist, createPlaylist, deletePlaylist } = useMusic();
+interface SidebarProps {
+  onAuthRequired?: () => void;
+}
+
+export function Sidebar({ onAuthRequired }: SidebarProps) {
+  const { playlists, selectedPlaylist, setSelectedPlaylist, createPlaylist, deletePlaylist, user, setCurrentView } = useMusic();
   const [isCreating, setIsCreating] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState("");
+
+  const handleCreateClick = () => {
+    if (!user && onAuthRequired) {
+      onAuthRequired();
+      return;
+    }
+    setIsCreating((prev) => !prev);
+  };
 
   const handleCreate = () => {
     if (newPlaylistName.trim()) {
@@ -29,7 +41,7 @@ export function Sidebar() {
             size="icon"
             className={`h-8 w-8 hover:text-foreground transition-colors duration-300 ${isCreating ? "text-primary" : "text-muted-foreground"
               }`}
-            onClick={() => setIsCreating((prev) => !prev)}
+            onClick={handleCreateClick}
           >
             <span
               className="flex items-center justify-center transition-transform duration-300 ease-in-out"
@@ -67,29 +79,32 @@ export function Sidebar() {
         {playlists.map((playlist) => (
           <div
             key={playlist.id}
-            className={`w-full flex items-center gap-3 p-3 rounded-md transition-colors ${selectedPlaylist?.id === playlist.id
-              ? "bg-surface-elevated text-foreground"
+            className={`group w-full flex items-center gap-3 p-3 rounded-md transition-all duration-300 transform hover:scale-102 ${selectedPlaylist?.id === playlist.id
+              ? "bg-surface-elevated text-foreground shadow-md"
               : "text-muted-foreground hover:bg-surface-hover hover:text-foreground"
               }`}
           >
             <button
-              onClick={() => setSelectedPlaylist(playlist)}
+              onClick={() => {
+                setSelectedPlaylist(playlist);
+                setCurrentView("home");
+              }}
               className="flex items-center gap-3 flex-1 text-left"
             >
               {playlist.cover ? (
                 <img
                   src={playlist.cover}
                   alt={playlist.name}
-                  className="w-10 h-10 rounded object-cover"
+                  className="w-10 h-10 rounded object-cover transition-transform duration-300 hover:scale-110"
                 />
               ) : (
-                <div className="w-10 h-10 rounded bg-card flex items-center justify-center">
+                <div className="w-10 h-10 rounded bg-card flex items-center justify-center transition-all duration-300 group-hover:bg-primary/20">
                   <Music className="h-5 w-5 text-muted-foreground" />
                 </div>
               )}
-              <div className="flex-1">
+              <div className="flex-1 transition-all duration-300">
                 <p className="font-medium text-sm truncate">{playlist.name}</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground transition-colors duration-300">
                   {playlist.song_count ?? playlist.songs?.length ?? 0} songs
                 </p>
               </div>
@@ -97,7 +112,7 @@ export function Sidebar() {
 
             <button
               onClick={() => deletePlaylist(String(playlist.id))}
-              className="text-muted-foreground hover:text-destructive transition-colors"
+              className="text-muted-foreground hover:text-destructive transition-all duration-200 hover:scale-110 opacity-0 group-hover:opacity-100"
               title="Delete playlist"
             >
               <Minus className="h-4 w-4" />

@@ -6,7 +6,7 @@ import React, {
   useRef,
   ReactNode,
 } from "react";
-import { Song, Playlist, User } from "@/types/music";
+import { Song, Playlist, User, Activity } from "@/types/music";
 
 interface MusicContextType {
   songs: Song[];
@@ -18,6 +18,10 @@ interface MusicContextType {
   user: User | null;
   selectedPlaylist: Playlist | null;
   searchQuery: string;
+  currentView: "home" | "library" | "browse";
+  filterByArtist: string | null;
+  filterByGenre: string | null;
+  activities: Activity[];
 
   setCurrentSong: (song: Song | null) => void;
   setIsPlaying: (playing: boolean) => void;
@@ -26,15 +30,21 @@ interface MusicContextType {
   setUser: (user: User | null) => void;
   setSelectedPlaylist: (playlist: Playlist | null) => void;
   setSearchQuery: (query: string) => void;
+  setCurrentView: (view: "home" | "library" | "browse") => void;
+  setFilterByArtist: (artist: string | null) => void;
+  setFilterByGenre: (genre: string | null) => void;
 
   addSongToPlaylist: (songId: number, playlistId: number) => void;
   removeSongFromPlaylist: (songId: number, playlistId: number) => void;
+  deleteSongFromPlaylist: (songId: number, playlistId: number) => void;
   transferSong: (songId: number, fromPlaylistId: number, toPlaylistId: number) => void;
   createPlaylist: (name: string) => void;
   playNext: () => void;
   playPrevious: () => void;
   deletePlaylist: (playlistId: string) => void;
   seek: (time: number) => void;
+  addActivity: (activity: Activity) => void;
+  clearActivities: () => void;
 }
 
 const MusicContext = createContext<MusicContextType | undefined>(undefined);
@@ -51,6 +61,10 @@ export function MusicProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentView, setCurrentView] = useState<"home" | "library" | "browse">("home");
+  const [filterByArtist, setFilterByArtist] = useState<string | null>(null);
+  const [filterByGenre, setFilterByGenre] = useState<string | null>(null);
+  const [activities, setActivities] = useState<Activity[]>([]);
 
   // 🎵 Fetch playlists
   useEffect(() => {
@@ -62,33 +76,86 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     fetchPlaylists();
   }, [user]);
 
-  // 🎵 Fetch songs when playlist changes
+  // 🎵 Initialize songs on app load (one-time)
   useEffect(() => {
-    const fetchSongs = async () => {
-      if (selectedPlaylist) {
-        const res = await fetch(`/api/getSongs.php?playlist_id=${selectedPlaylist.id}`);
-        const data = await res.json();
-        setSongs(data);
-        setSelectedPlaylist((prev) => (prev ? { ...prev, songs: data } : prev));
-      } else {
+    const initSongs = async () => {
+      try {
+        console.log("Initializing songs on app load");
         const res = await fetch("/api/getSongs.php");
+        if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch songs`);
         const data = await res.json();
-        setSongs(data);
+        const songData = Array.isArray(data) ? data : [];
+        console.log(`Initialized with ${songData.length} songs`);
+        setSongs(songData);
+      } catch (error) {
+        console.error("Error initializing songs:", error);
       }
     };
+    
+    initSongs();
+  }, []); // Only run once on app load
+
+  // 🎵 Fetch songs - handles both global and playlist-specific songs
+  useEffect(() => {
+    let isMounted = true;
+    
+    const fetchSongs = async () => {
+      try {
+        if (selectedPlaylist) {
+          console.log(`Fetching songs for playlist ${selectedPlaylist.id}`);
+          const res = await fetch(`/api/getSongs.php?playlist_id=${selectedPlaylist.id}`);
+          if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch playlist songs`);
+          const data = await res.json();
+          if (isMounted) {
+            const songData = Array.isArray(data) ? data : [];
+            console.log(`Got ${songData.length} songs for playlist`);
+            setSongs(songData);
+            setSelectedPlaylist((prev) => (prev ? { ...prev, songs: songData } : prev));
+          }
+        } else {
+          console.log("Fetching all songs (no playlist selected)");
+          const res = await fetch("/api/getSongs.php");
+          if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch global songs`);
+          const data = await res.json();
+          if (isMounted) {
+            const songData = Array.isArray(data) ? data : [];
+            console.log(`Got ${songData.length} total songs from database`);
+            setSongs(songData);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching songs:", error);
+        if (isMounted) {
+          console.log("Setting songs to empty array due to error");
+          setSongs([]);
+        }
+      }
+    };
+    
     fetchSongs();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [selectedPlaylist]);
 
-  // 🔊 Handle play/pause
+  // 🔊 Handle song change
   useEffect(() => {
     if (!audioRef.current || !currentSong) return;
     audioRef.current.src = `/${currentSong.url}`;
+    audioRef.current.currentTime = 0;
+    setProgress(0);
+  }, [currentSong]);
+
+  // 🔊 Handle play/pause separately
+  useEffect(() => {
+    if (!audioRef.current || !currentSong) return;
     if (isPlaying) {
       audioRef.current.play().catch((err) => console.error("Playback failed:", err));
     } else {
       audioRef.current.pause();
     }
-  }, [currentSong, isPlaying]);
+  }, [isPlaying, currentSong]);
 
   // 🔊 Handle volume
   useEffect(() => {
@@ -97,21 +164,47 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     }
   }, [volume]);
 
-  // 🔊 Track progress
+  // 🔊 Track progress and get duration from audio element
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
+    
     const updateProgress = () => setProgress(audio.currentTime);
+    const updateDuration = () => {
+      // Get actual duration from audio file, not database
+      if (currentSong && audio.duration && audio.duration !== Infinity) {
+        setSongs((prev) =>
+          prev.map((s) =>
+            s.id === currentSong.id ? { ...s, duration: Math.round(audio.duration) } : s
+          )
+        );
+      }
+    };
+    
     audio.addEventListener("timeupdate", updateProgress);
-    return () => audio.removeEventListener("timeupdate", updateProgress);
-  }, []);
+    audio.addEventListener("loadedmetadata", updateDuration);
+    
+    return () => {
+      audio.removeEventListener("timeupdate", updateProgress);
+      audio.removeEventListener("loadedmetadata", updateDuration);
+    };
+  }, [currentSong]);
 
   // 🎵 Seek
   const seek = (time: number) => {
     if (audioRef.current) {
       audioRef.current.currentTime = time;
-      setProgress(time);
     }
+    setProgress(time);
+  };
+
+  // 🎵 Activities
+  const addActivity = (activity: Activity) => {
+    setActivities((prev) => [activity, ...prev]);
+  };
+
+  const clearActivities = () => {
+    setActivities([]);
   };
 
   // 🎵 Playlist management
@@ -123,9 +216,20 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     });
     const newPlaylist = await res.json();
     setPlaylists((prev) => [...prev, newPlaylist]);
+
+    // Add activity
+    addActivity({
+      id: Math.random().toString(36).substr(2, 9),
+      type: "create_playlist",
+      message: `Created playlist "${name}"`,
+      timestamp: new Date(),
+      playlistName: name,
+    });
   };
 
   const deletePlaylist = async (playlistId: string) => {
+    const playlist = playlists.find((p) => p.id === Number(playlistId));
+    
     await fetch("/api/deletePlaylist.php", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -135,6 +239,15 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     if (selectedPlaylist?.id === Number(playlistId)) {
       setSelectedPlaylist(null);
     }
+
+    // Add activity
+    addActivity({
+      id: Math.random().toString(36).substr(2, 9),
+      type: "delete_playlist",
+      message: `Deleted playlist "${playlist?.name || "Unnamed"}"`,
+      timestamp: new Date(),
+      playlistName: playlist?.name,
+    });
   };
 
   const transferSong = async (
@@ -152,6 +265,11 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       }),
     });
 
+    // Refresh all playlists to update song counts
+    const playlistRes = await fetch(`/api/getPlaylists.php?user_id=${user?.id || 1}`);
+    const updatedPlaylists = await playlistRes.json();
+    setPlaylists(updatedPlaylists);
+
     // Refresh songs for the current playlist
     if (Number(selectedPlaylist?.id) === fromPlaylistId) {
       const res = await fetch(`/api/getSongs.php?playlist_id=${fromPlaylistId}`);
@@ -162,17 +280,49 @@ export function MusicProvider({ children }: { children: ReactNode }) {
   };
 
   const addSongToPlaylist = async (songId: number, playlistId: number) => {
-    await fetch("/api/addSongToPlaylist.php", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ song_id: songId, playlist_id: playlistId }),
-    });
+    try {
+      const response = await fetch("/api/addSongToPlaylist.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ song_id: songId, playlist_id: playlistId }),
+      });
 
-    if (selectedPlaylist?.id === Number(playlistId)) {
-      const res = await fetch(`/api/getSongs.php?playlist_id=${playlistId}`);
-      const data = await res.json();
-      setSongs(data);
-      setSelectedPlaylist((prev) => (prev ? { ...prev, songs: data } : prev));
+      if (!response.ok) {
+        throw new Error("Failed to add song to playlist");
+      }
+
+      // Refresh all playlists to update song counts
+      const res = await fetch(`/api/getPlaylists.php?user_id=${user?.id || 1}`);
+      const updatedPlaylists = await res.json();
+      
+      if (Array.isArray(updatedPlaylists)) {
+        setPlaylists(updatedPlaylists);
+      }
+
+      // If the playlist we added to is selected, refresh songs
+      if (selectedPlaylist?.id === Number(playlistId)) {
+        const songRes = await fetch(`/api/getSongs.php?playlist_id=${playlistId}`);
+        const data = await songRes.json();
+        
+        if (Array.isArray(data)) {
+          setSongs(data);
+          setSelectedPlaylist((prev) => (prev ? { ...prev, songs: data } : prev));
+        }
+      }
+
+      // Add activity
+      const playlist = updatedPlaylists.find((p) => p.id === playlistId);
+      const song = songs.find((s) => s.id === String(songId));
+      addActivity({
+        id: Math.random().toString(36).substr(2, 9),
+        type: "add_song",
+        message: `Added "${song?.title || "song"}" to ${playlist?.name || "playlist"}`,
+        timestamp: new Date(),
+        songTitle: song?.title,
+        playlistName: playlist?.name,
+      });
+    } catch (error) {
+      console.error("Error adding song to playlist:", error);
     }
   };
 
@@ -183,12 +333,37 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({ song_id: songId, playlist_id: playlistId }),
     });
 
+    // Refresh songs for the playlist being viewed
     if (selectedPlaylist?.id === Number(playlistId)) {
       const res = await fetch(`/api/getSongs.php?playlist_id=${playlistId}`);
       const data = await res.json();
       setSongs(data);
-      setSelectedPlaylist((prev) => (prev ? { ...prev, songs: data } : prev));
+      setSelectedPlaylist((prev) => (prev ? { ...prev, songs: data, song_count: data.length } : prev));
     }
+
+    // Always update the playlist count in the playlists list
+    setPlaylists((prev) =>
+      prev.map((p) =>
+        p.id === Number(playlistId) ? { ...p, song_count: (p.song_count || 1) - 1 } : p
+      )
+    );
+  };
+
+  const deleteSongFromPlaylist = async (songId: number, playlistId: number) => {
+    const song = songs.find((s) => s.id === String(songId));
+    const playlist = playlists.find((p) => p.id === playlistId);
+    
+    await removeSongFromPlaylist(songId, playlistId);
+    
+    // Add activity
+    addActivity({
+      id: Math.random().toString(36).substr(2, 9),
+      type: "remove_song",
+      message: `Removed "${song?.title || "song"}" from ${playlist?.name || "playlist"}`,
+      timestamp: new Date(),
+      songTitle: song?.title,
+      playlistName: playlist?.name,
+    });
   };
 
   // 🎵 Next/Previous (basic stubs)
@@ -197,6 +372,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     const idx = songs.findIndex((s) => s.id === currentSong.id);
     const nextSong = songs[idx + 1];
     if (nextSong) {
+      setProgress(0); // Reset progress when skipping
       setCurrentSong(nextSong);
       setIsPlaying(true);
     }
@@ -207,6 +383,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     const idx = songs.findIndex((s) => s.id === currentSong.id);
     const prevSong = songs[idx - 1];
     if (prevSong) {
+      setProgress(0); // Reset progress when skipping
       setCurrentSong(prevSong);
       setIsPlaying(true);
     }
@@ -224,6 +401,10 @@ export function MusicProvider({ children }: { children: ReactNode }) {
         user,
         selectedPlaylist,
         searchQuery,
+        currentView,
+        filterByArtist,
+        filterByGenre,
+        activities,
         setCurrentSong,
         setIsPlaying,
         setVolume,
@@ -231,14 +412,20 @@ export function MusicProvider({ children }: { children: ReactNode }) {
         setUser,
         setSelectedPlaylist,
         setSearchQuery,
+        setCurrentView,
+        setFilterByArtist,
+        setFilterByGenre,
         addSongToPlaylist,
         removeSongFromPlaylist,
+        deleteSongFromPlaylist,
         transferSong,
         createPlaylist,
         playNext,
         playPrevious,
         deletePlaylist,
         seek,
+        addActivity,
+        clearActivities,
       }}
     >
       {children}
