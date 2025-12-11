@@ -17,6 +17,20 @@
   }
 }
 
+/* Steady glow animation */
+@keyframes steadyGlow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(249, 115, 22, 0.4), 0 0 16px rgba(249, 115, 22, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 12px rgba(249, 115, 22, 0.6), 0 0 20px rgba(249, 115, 22, 0.3);
+  }
+}
+
+.animate-glow {
+  animation: steadyGlow 2s ease-in-out infinite;
+}
+
 .logo {
   height: 6em;
   padding: 1.5em;

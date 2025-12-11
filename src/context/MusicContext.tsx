@@ -18,10 +18,11 @@ interface MusicContextType {
   user: User | null;
   selectedPlaylist: Playlist | null;
   searchQuery: string;
-  currentView: "home" | "library" | "browse";
+  currentView: "home" | "library" | "browse" | "song-detail";
   filterByArtist: string | null;
   filterByGenre: string | null;
   activities: Activity[];
+  selectedSongDetail: Song | null;
 
   setCurrentSong: (song: Song | null) => void;
   setIsPlaying: (playing: boolean) => void;
@@ -30,9 +31,10 @@ interface MusicContextType {
   setUser: (user: User | null) => void;
   setSelectedPlaylist: (playlist: Playlist | null) => void;
   setSearchQuery: (query: string) => void;
-  setCurrentView: (view: "home" | "library" | "browse") => void;
+  setCurrentView: (view: "home" | "library" | "browse" | "song-detail") => void;
   setFilterByArtist: (artist: string | null) => void;
   setFilterByGenre: (genre: string | null) => void;
+  setSelectedSongDetail: (song: Song | null) => void;
 
   addSongToPlaylist: (songId: number, playlistId: number) => void;
   removeSongFromPlaylist: (songId: number, playlistId: number) => void;
@@ -61,10 +63,11 @@ export function MusicProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentView, setCurrentView] = useState<"home" | "library" | "browse">("home");
+  const [currentView, setCurrentView] = useState<"home" | "library" | "browse" | "song-detail">("home");
   const [filterByArtist, setFilterByArtist] = useState<string | null>(null);
   const [filterByGenre, setFilterByGenre] = useState<string | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [selectedSongDetail, setSelectedSongDetail] = useState<Song | null>(null);
 
   // 🎵 Fetch playlists
   useEffect(() => {
@@ -405,6 +408,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
         filterByArtist,
         filterByGenre,
         activities,
+        selectedSongDetail,
         setCurrentSong,
         setIsPlaying,
         setVolume,
@@ -415,6 +419,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
         setCurrentView,
         setFilterByArtist,
         setFilterByGenre,
+        setSelectedSongDetail,
         addSongToPlaylist,
         removeSongFromPlaylist,
         deleteSongFromPlaylist,

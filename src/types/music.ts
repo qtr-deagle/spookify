@@ -8,6 +8,7 @@ export interface Song {
   cover: string;
   url: string;
   genre?: string;
+  lyrics?: string;  // Song lyrics
 }
 
 export interface Playlist {
@@ -22,6 +23,7 @@ export interface User {
   id: number;
   username: string;
   email: string;
+  role: "user" | "admin";
 }
 
 export interface Activity {

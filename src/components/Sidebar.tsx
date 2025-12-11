@@ -1,4 +1,4 @@
-import { Plus, Music, Minus } from "lucide-react";
+import { Plus, Music, Minus, X, Globe, Edit2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMusic } from "@/context/MusicContext";
 import { useState } from "react";
@@ -10,116 +10,284 @@ interface SidebarProps {
 
 export function Sidebar({ onAuthRequired }: SidebarProps) {
   const { playlists, selectedPlaylist, setSelectedPlaylist, createPlaylist, deletePlaylist, user, setCurrentView } = useMusic();
-  const [isCreating, setIsCreating] = useState(false);
+  const [isCreatingModal, setIsCreatingModal] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState("");
 
-  const handleCreateClick = () => {
-    if (!user && onAuthRequired) {
-      onAuthRequired();
-      return;
-    }
-    setIsCreating((prev) => !prev);
-  };
-
-  const handleCreate = () => {
+  const handleCreatePlaylist = () => {
     if (newPlaylistName.trim()) {
       createPlaylist(newPlaylistName.trim());
       setNewPlaylistName("");
-      setIsCreating(false);
+      setIsCreatingModal(false);
     }
   };
 
   return (
-    <aside className="w-64 bg-background border-r border-border flex flex-col h-full">
-      <div className="p-4 border-b border-border">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-            Your Playlists
-          </h2>
+    <aside className="w-80 bg-background flex flex-col h-full gap-0">
+      {/* Header */}
+      <div className="p-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-white">Your Library</h2>
           <Button
             variant="ghost"
             size="icon"
-            className={`h-8 w-8 hover:text-foreground transition-colors duration-300 ${isCreating ? "text-primary" : "text-muted-foreground"
-              }`}
-            onClick={handleCreateClick}
+            className="h-8 w-8 hover:bg-surface-hover text-white"
+            onClick={() => setIsCreatingModal(true)}
           >
-            <span
-              className="flex items-center justify-center transition-transform duration-300 ease-in-out"
-              style={{ transform: isCreating ? "rotate(180deg)" : "rotate(0deg)" }}
-            >
-              {isCreating ? (
-                <Minus className="h-4 w-4 transition-opacity duration-300 opacity-100" />
-              ) : (
-                <Plus className="h-4 w-4 transition-opacity duration-300 opacity-100" />
-              )}
-            </span>
+            <Plus className="h-5 w-5" />
           </Button>
-
-
         </div>
+      </div>
 
-        {isCreating && (
-          <div className="flex gap-2 mb-4">
-            <Input
-              placeholder="Playlist name"
-              value={newPlaylistName}
-              onChange={(e) => setNewPlaylistName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-              className="h-8 text-sm"
-              autoFocus
-            />
-            <Button size="sm" onClick={handleCreate} className="h-8">
-              Add
-            </Button>
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-y-auto scrollbar-thin p-4 my-4">
+        {playlists.length > 0 ? (
+          <div className="space-y-2">
+            {playlists.map((playlist) => (
+              <SidebarPlaylistItem
+                key={playlist.id}
+                playlist={playlist}
+                isSelected={selectedPlaylist?.id === playlist.id}
+                onSelect={() => {
+                  setSelectedPlaylist(playlist);
+                  setCurrentView("home");
+                }}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-4">
+
+            {/* Browse Podcasts Card */}
+            <div className="bg-surface-hover/50 rounded-xl p-6 hover:bg-surface-hover transition-all duration-300">
+              <h3 className="text-xl font-bold text-white mb-2">Let's find some podcasts to follow</h3>
+              <p className="text-white/70 text-sm mb-4">We'll keep you updated on new episodes</p>
+              <Button 
+                onClick={() => setCurrentView("browse")}
+                className="bg-white hover:bg-white/90 text-black font-bold rounded-full px-6 py-2 text-sm"
+              >
+                Browse podcasts
+              </Button>
+            </div>
           </div>
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto scrollbar-thin p-2">
-        {playlists.map((playlist) => (
-          <div
-            key={playlist.id}
-            className={`group w-full flex items-center gap-3 p-3 rounded-md transition-all duration-300 transform hover:scale-102 ${selectedPlaylist?.id === playlist.id
-              ? "bg-surface-elevated text-foreground shadow-md"
-              : "text-muted-foreground hover:bg-surface-hover hover:text-foreground"
-              }`}
-          >
-            <button
-              onClick={() => {
-                setSelectedPlaylist(playlist);
-                setCurrentView("home");
-              }}
-              className="flex items-center gap-3 flex-1 text-left"
-            >
-              {playlist.cover ? (
-                <img
-                  src={playlist.cover}
-                  alt={playlist.name}
-                  className="w-10 h-10 rounded object-cover transition-transform duration-300 hover:scale-110"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded bg-card flex items-center justify-center transition-all duration-300 group-hover:bg-primary/20">
-                  <Music className="h-5 w-5 text-muted-foreground" />
-                </div>
-              )}
-              <div className="flex-1 transition-all duration-300">
-                <p className="font-medium text-sm truncate">{playlist.name}</p>
-                <p className="text-xs text-muted-foreground transition-colors duration-300">
-                  {playlist.song_count ?? playlist.songs?.length ?? 0} songs
-                </p>
-              </div>
-            </button>
-
-            <button
-              onClick={() => deletePlaylist(String(playlist.id))}
-              className="text-muted-foreground hover:text-destructive transition-all duration-200 hover:scale-110 opacity-0 group-hover:opacity-100"
-              title="Delete playlist"
-            >
-              <Minus className="h-4 w-4" />
-            </button>
+      {/* Footer */}
+      <div className="mt-4 p-4 space-y-4">
+        {/* Footer Links */}
+        <div className="space-y-3 text-xs">
+          <div className="flex flex-wrap gap-2">
+            <a href="#" className="text-muted-foreground hover:text-white transition-colors">Legal</a>
+            <a href="#" className="text-muted-foreground hover:text-white transition-colors">Safety & Privacy Center</a>
+            <a href="#" className="text-muted-foreground hover:text-white transition-colors">Privacy Policy</a>
+            <a href="#" className="text-muted-foreground hover:text-white transition-colors">Cookies</a>
           </div>
-        ))}
+          <div className="flex flex-wrap gap-2">
+            <a href="#" className="text-muted-foreground hover:text-white transition-colors">About Ads</a>
+            <a href="#" className="text-muted-foreground hover:text-white transition-colors">Accessibility</a>
+          </div>
+        </div>
+
+        {/* Cookies Heading */}
+        <div>
+          <p className="text-white font-semibold text-sm mb-3">Cookies</p>
+        </div>
+
+        {/* Language Selector */}
+        <Button
+          variant="outline"
+          className="w-full border-border bg-transparent hover:bg-surface-hover text-white rounded-full py-2 flex items-center justify-center gap-2"
+        >
+          <Globe className="h-4 w-4" />
+          <span>English</span>
+        </Button>
       </div>
+
+      {/* Create Playlist Modal */}
+      {isCreatingModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-zinc-900 rounded-2xl p-8 w-full max-w-md shadow-2xl animate-in fade-in zoom-in-95 border border-zinc-800">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white">Create a playlist</h2>
+              <button
+                onClick={() => setIsCreatingModal(false)}
+                className="text-muted-foreground hover:text-white transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-semibold text-white block mb-2">Playlist name</label>
+                <Input
+                  type="text"
+                  placeholder="Enter playlist name"
+                  value={newPlaylistName}
+                  onChange={(e) => setNewPlaylistName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleCreatePlaylist()}
+                  autoFocus
+                  className="bg-surface-hover border-surface-hover/50 text-white placeholder:text-muted-foreground focus:border-orange-500 focus:ring-orange-500/50 rounded-lg py-2 px-3"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <Button
+                  onClick={() => setIsCreatingModal(false)}
+                  variant="ghost"
+                  className="flex-1 text-white hover:bg-surface-hover"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleCreatePlaylist}
+                  disabled={!newPlaylistName.trim()}
+                  className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold disabled:opacity-50"
+                >
+                  Create
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
+  );
+}
+
+// Sidebar Playlist Item with Rename/Delete
+function SidebarPlaylistItem({
+  playlist,
+  isSelected,
+  onSelect,
+}: {
+  playlist: any;
+  isSelected: boolean;
+  onSelect: () => void;
+}) {
+  const { deletePlaylist } = useMusic();
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [newName, setNewName] = useState(playlist.name);
+  const [isHovering, setIsHovering] = useState(false);
+
+  const handleRename = async () => {
+    if (newName.trim() && newName !== playlist.name) {
+      try {
+        const formData = new FormData();
+        formData.append("playlist_id", playlist.id.toString());
+        formData.append("name", newName.trim());
+        
+        const response = await fetch("/api/updatePlaylist.php", {
+          method: "POST",
+          body: formData,
+        });
+        
+        if (response.ok) {
+          setIsRenaming(false);
+          window.dispatchEvent(new CustomEvent('playlistsUpdated'));
+        }
+      } catch (error) {
+        console.error("Failed to rename playlist:", error);
+      }
+    } else {
+      setIsRenaming(false);
+    }
+  };
+
+  const handleDelete = () => {
+    if (!confirm(`Are you sure you want to delete "${playlist.name}"?`)) {
+      return;
+    }
+    deletePlaylist(playlist.id);
+  };
+
+  return (
+    <div
+      className="group relative w-full"
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
+    >
+      <div
+        onClick={onSelect}
+        className={`group w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-300 cursor-pointer ${
+          isSelected
+            ? "bg-surface-hover text-white"
+            : "text-muted-foreground hover:bg-surface-hover/50 hover:text-white"
+        }`}
+      >
+        <div className="w-12 h-12 rounded bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center flex-shrink-0">
+          <Music className="h-6 w-6 text-white" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-sm text-white truncate">{playlist.name}</p>
+          <p className="text-xs text-muted-foreground">{playlist.song_count ?? 0} songs</p>
+        </div>
+      </div>
+
+      {/* Action Buttons - Show on Hover */}
+      {isHovering && !isRenaming && (
+        <div className="absolute top-2 right-2 flex gap-1 z-20">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsRenaming(true);
+            }}
+            className="p-1.5 rounded bg-orange-500 hover:bg-orange-600 text-white transition-all"
+            title="Rename"
+          >
+            <Edit2 className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete();
+            }}
+            className="p-1.5 rounded bg-red-500 hover:bg-red-600 text-white transition-all"
+            title="Delete"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* Rename Modal */}
+      {isRenaming && (
+        <div
+          className="absolute inset-0 bg-black/80 flex items-center justify-center z-50 rounded-lg"
+          onClick={() => setIsRenaming(false)}
+        >
+          <div
+            className="bg-zinc-900 rounded-lg p-3 w-[85%] border border-zinc-800"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Input
+              type="text"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleRename();
+                if (e.key === "Escape") setIsRenaming(false);
+              }}
+              autoFocus
+              className="bg-surface-hover border-surface-hover/50 text-white placeholder:text-muted-foreground focus:border-orange-500 focus:ring-orange-500/50 rounded-lg py-1.5 px-2 mb-2 text-sm"
+            />
+            <div className="flex gap-2 text-xs">
+              <button
+                onClick={() => setIsRenaming(false)}
+                className="flex-1 px-2 py-1 rounded bg-surface-hover hover:bg-surface-hover/80 text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRename}
+                className="flex-1 px-2 py-1 rounded bg-orange-500 hover:bg-orange-600 text-white font-bold transition-colors"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

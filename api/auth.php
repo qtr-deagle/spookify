@@ -7,6 +7,7 @@ $action = $data['action'] ?? '';
 $email = $data['email'] ?? '';
 $password = $data['password'] ?? '';
 $username = $data['username'] ?? ''; // only used for registration
+$role = $data['role'] ?? 'user'; // default to 'user' role
 
 if ($action === 'register') {
     // Basic validation
@@ -21,6 +22,11 @@ if ($action === 'register') {
         exit;
     }
 
+    // Validate role
+    if (!in_array($role, ['user', 'admin'])) {
+        $role = 'user';
+    }
+
     // Check if email already exists
     $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
     $stmt->execute([$email]);
@@ -31,8 +37,8 @@ if ($action === 'register') {
 
     // Hash password and insert user
     $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-    $stmt = $pdo->prepare("INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)");
-    $stmt->execute([$username, $email, $hashedPassword]);
+    $stmt = $pdo->prepare("INSERT INTO users (username, email, password_hash, role) VALUES (?, ?, ?, ?)");
+    $stmt->execute([$username, $email, $hashedPassword, $role]);
 
     echo json_encode(["status" => "success", "message" => "Account created successfully"]);
     exit;
@@ -50,7 +56,8 @@ if ($action === 'login') {
             "user" => [
                 "id" => $user['id'],
                 "username" => $user['username'],
-                "email" => $user['email']
+                "email" => $user['email'],
+                "role" => $user['role'] ?? 'user'
             ]
         ]);
     } else {

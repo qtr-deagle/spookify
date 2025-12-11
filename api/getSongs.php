@@ -1,4 +1,4 @@
-<?php
+`<?php`
 require_once "db.php"; // assumes $pdo is defined in db.php
 header("Content-Type: application/json");
 
