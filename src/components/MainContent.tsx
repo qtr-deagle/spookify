@@ -2,18 +2,24 @@ import { useMusic } from "@/context/MusicContext";
 import { useNavigation } from "@/context/NavigationContext";
 import { SongCard } from "./SongCard";
 import { SongDetail } from "./SongDetail";
-import { Music, X, ArrowLeft, Play, Zap } from "lucide-react";
+import { Music, X, ArrowLeft, Play, Pause, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Explore } from "./Explore";
 import { Library } from "./Library";
+import { Pricing } from "./Pricing";
 
 export function MainContent({ onAuthRequired }: { onAuthRequired?: () => void }) {
-  const { songs, selectedPlaylist, searchQuery, currentView, playlists, filterByArtist, setFilterByArtist, filterByGenre, setFilterByGenre, user, setCurrentSong, setIsPlaying, selectedSongDetail } = useMusic();
+  const { songs, selectedPlaylist, searchQuery, currentView, playlists, filterByArtist, setFilterByArtist, filterByGenre, setFilterByGenre, user, setCurrentSong, setIsPlaying, selectedSongDetail, setSelectedSongDetail, setCurrentView, currentSong, isPlaying } = useMusic();
   const { goBack } = useNavigation();
 
   // Show Song Detail page
   if (currentView === "song-detail" && selectedSongDetail) {
     return <SongDetail song={selectedSongDetail} onAuthRequired={onAuthRequired} />;
+  }
+
+  // Show Pricing page
+  if (currentView === "pricing") {
+    return <Pricing />;
   }
 
   // Show Explore page for browse view
@@ -112,14 +118,36 @@ export function MainContent({ onAuthRequired }: { onAuthRequired?: () => void })
               <Button
                 onClick={() => {
                   if (heroSong) {
-                    setCurrentSong(heroSong);
-                    setIsPlaying(true);
+                    // If clicking the same song
+                    if (currentSong?.id === heroSong.id) {
+                      // Toggle play/pause
+                      setIsPlaying(!isPlaying);
+                    } else {
+                      // Play new song and navigate to detail
+                      setCurrentSong(heroSong);
+                      setIsPlaying(true);
+                      setSelectedSongDetail(heroSong);
+                      setCurrentView("song-detail");
+                    }
                   }
                 }}
-                className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-full px-8 py-3 font-bold flex items-center gap-2 shadow-lg hover:shadow-xl transition-all duration-300"
+                className={`rounded-full px-8 py-3 font-bold flex items-center gap-2 shadow-lg hover:shadow-xl transition-all duration-300 ${
+                  currentSong?.id === heroSong?.id && isPlaying
+                    ? "bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
+                    : "bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600"
+                } text-white`}
               >
-                <Play className="h-5 w-5 fill-current" />
-                Play Now
+                {currentSong?.id === heroSong?.id && isPlaying ? (
+                  <>
+                    <Pause className="h-5 w-5 fill-current" />
+                    Pause
+                  </>
+                ) : (
+                  <>
+                    <Play className="h-5 w-5 fill-current" />
+                    Play Now
+                  </>
+                )}
               </Button>
             </div>
           </div>

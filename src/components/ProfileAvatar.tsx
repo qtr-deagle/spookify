@@ -1,5 +1,5 @@
 import { User } from "@/types/music";
-import { LogOut, Settings } from "lucide-react";
+import { LogOut, Settings, Zap } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -97,6 +97,21 @@ export function ProfileAvatar({ user, onLogout, onAdminClick }: ProfileAvatarPro
               {user.role === "admin" ? "👑 Admin" : "🎵 User"}
             </span>
           </div>
+          {/* Subscription Badge */}
+          {user.subscription && (
+            <div className="mt-2">
+              <span
+                className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                  user.subscription === "pro"
+                    ? "bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-300 border border-yellow-500/30"
+                    : "bg-gradient-to-r from-orange-500/20 to-amber-500/20 text-orange-300 border border-orange-500/30"
+                }`}
+              >
+                <Zap className="h-3 w-3" />
+                {user.subscription === "pro" ? "Pro" : "Premium"}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Admin Option (only for admins) */}

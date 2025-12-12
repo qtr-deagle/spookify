@@ -1,4 +1,4 @@
-import { Plus, Music, Minus, X, Globe, Edit2, Trash2 } from "lucide-react";
+import { Plus, Music, Minus, X, Globe, Edit2, Trash2, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMusic } from "@/context/MusicContext";
 import { useState } from "react";
@@ -31,7 +31,13 @@ export function Sidebar({ onAuthRequired }: SidebarProps) {
             variant="ghost"
             size="icon"
             className="h-8 w-8 hover:bg-surface-hover text-white"
-            onClick={() => setIsCreatingModal(true)}
+            onClick={() => {
+              if (!user) {
+                onAuthRequired?.();
+                return;
+              }
+              setIsCreatingModal(true);
+            }}
           >
             <Plus className="h-5 w-5" />
           </Button>
@@ -74,6 +80,17 @@ export function Sidebar({ onAuthRequired }: SidebarProps) {
 
       {/* Footer */}
       <div className="mt-4 p-4 space-y-4">
+        {/* Premium CTA - Only for free users */}
+        {!user || user.subscription === "free" ? (
+          <Button
+            onClick={() => setCurrentView("pricing")}
+            className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold rounded-full py-2 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all"
+          >
+            <Zap className="h-4 w-4" />
+            <span>Upgrade to Premium</span>
+          </Button>
+        ) : null}
+
         {/* Footer Links */}
         <div className="space-y-3 text-xs">
           <div className="flex flex-wrap gap-2">
@@ -182,23 +199,37 @@ function SidebarPlaylistItem({
           body: formData,
         });
         
-        if (response.ok) {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
           setIsRenaming(false);
           window.dispatchEvent(new CustomEvent('playlistsUpdated'));
+        } else {
+          throw new Error(result.error || "Failed to rename playlist");
         }
       } catch (error) {
         console.error("Failed to rename playlist:", error);
+        alert("Failed to rename playlist. Please try again.");
       }
     } else {
       setIsRenaming(false);
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!confirm(`Are you sure you want to delete "${playlist.name}"?`)) {
       return;
     }
-    deletePlaylist(playlist.id);
+    try {
+      await deletePlaylist(playlist.id);
+    } catch (error) {
+      console.error("Delete failed:", error);
+      alert("Failed to delete playlist. Please try again.");
+    }
   };
 
   return (

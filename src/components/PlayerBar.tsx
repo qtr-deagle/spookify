@@ -1,4 +1,4 @@
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Heart, Music } from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Heart, Music, Repeat, Repeat1 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { useMusic } from "@/context/MusicContext";
 import { Button } from "@/components/ui/button";
@@ -20,8 +20,11 @@ export function PlayerBar() {
     setFilterByArtist,
     setSelectedSongDetail,
     setCurrentView: setView,
+    loopMode,
+    toggleLoopMode,
+    likedSongs,
+    toggleLikeSong,
   } = useMusic();
-  const [isLiked, setIsLiked] = useState(false);
   const [duration, setDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -128,11 +131,11 @@ export function PlayerBar() {
               variant="ghost"
               size="icon"
               className="h-7 w-7 md:h-8 md:w-8 text-muted-foreground hover:text-orange-400 transition-all duration-200 hover:scale-110 active:scale-95"
-              onClick={() => setIsLiked(!isLiked)}
+              onClick={() => currentSong && toggleLikeSong(String(currentSong.id))}
               disabled={!currentSong}
               title="Like song"
             >
-              <Heart className={`h-4 w-4 md:h-5 md:w-5 ${isLiked ? "fill-orange-400 text-orange-400" : ""}`} />
+              <Heart className={`h-4 w-4 md:h-5 md:w-5 ${currentSong && likedSongs.includes(String(currentSong.id)) ? "fill-orange-400 text-orange-400" : ""}`} />
             </Button>
 
             {/* Previous Button */}
@@ -172,6 +175,28 @@ export function PlayerBar() {
               title="Next"
             >
               <SkipForward className="h-4 w-4 md:h-5 md:w-5" />
+            </Button>
+
+            {/* Loop Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`h-7 w-7 md:h-8 md:w-8 transition-all duration-200 hover:scale-110 active:scale-95 ${
+                loopMode === "off"
+                  ? "text-muted-foreground hover:text-orange-400"
+                  : loopMode === "one"
+                    ? "text-orange-400"
+                    : "text-orange-400"
+              }`}
+              onClick={toggleLoopMode}
+              disabled={!currentSong}
+              title={`Loop: ${loopMode}`}
+            >
+              {loopMode === "one" ? (
+                <Repeat1 className="h-4 w-4 md:h-5 md:w-5" />
+              ) : (
+                <Repeat className={`h-4 w-4 md:h-5 md:w-5 ${loopMode === "all" ? "opacity-100" : "opacity-60"}`} />
+              )}
             </Button>
           </div>
 

@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Music, ArrowLeft, Clock, Plus, SortAsc, ListMusic, Sparkles, X, MoreVertical, Edit2, Trash2 } from "lucide-react";
+import { Music, ArrowLeft, Clock, Plus, SortAsc, ListMusic, Sparkles, X, MoreVertical, Edit2, Trash2, Heart } from "lucide-react";
 import { Song, Playlist } from "@/types/music";
 import { useMusic } from "@/context/MusicContext";
 import { useNavigation } from "@/context/NavigationContext";
@@ -25,7 +25,7 @@ interface LibraryAlbum {
 }
 
 export function Library({ onAuthRequired }: { onAuthRequired?: () => void }) {
-  const { songs, playlists, user, setCurrentView, searchQuery, setSelectedPlaylist } = useMusic();
+  const { songs, playlists, user, setCurrentView, searchQuery, setSelectedPlaylist, likedSongs } = useMusic();
   const { canGoBack, goBack } = useNavigation();
   const [activeTab, setActiveTab] = useState<LibraryTab>("all");
   const [selectedArtist, setSelectedArtist] = useState<string | null>(null);
@@ -122,6 +122,13 @@ export function Library({ onAuthRequired }: { onAuthRequired?: () => void }) {
     [playlists, searchQuery]
   );
 
+  // Filter and count liked songs
+  const filteredLikedSongs = useMemo(
+    () =>
+      songs.filter((song) => likedSongs.includes(String(song.id))),
+    [songs, likedSongs]
+  );
+
   return (
     <main className="flex-1 overflow-y-auto scrollbar-thin p-6 md:p-8 bg-background transition-all duration-300">
       {/* Header */}
@@ -204,6 +211,29 @@ export function Library({ onAuthRequired }: { onAuthRequired?: () => void }) {
 
           {/* All Tab - Show playlists and saved songs */}
           <TabsContent value="all" className="space-y-10">
+            {/* Liked Songs Section */}
+            {filteredLikedSongs.length > 0 && (
+              <section>
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                      <Heart className="h-6 w-6 text-orange-500 fill-orange-500" />
+                      Liked Songs
+                    </h2>
+                    <p className="text-muted-foreground text-sm">{filteredLikedSongs.length} songs you love</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+                  {filteredLikedSongs.map((song, index) => {
+                      const rowIndex = Math.floor(index / 5);
+                      return (
+                        <SongCard key={song.id} song={song} rowIndex={rowIndex} onAuthRequired={onAuthRequired} />
+                      );
+                    })}
+                </div>
+              </section>
+            )}
+
             {/* Your Playlists Section */}
             <section>
               <div className="mb-6">

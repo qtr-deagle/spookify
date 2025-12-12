@@ -24,6 +24,8 @@ export interface User {
   username: string;
   email: string;
   role: "user" | "admin";
+  subscription?: "free" | "premium" | "pro";
+  subscriptionDate?: string;
 }
 
 export interface Activity {

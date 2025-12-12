@@ -1,4 +1,4 @@
-import { Play, Plus, ArrowRightLeft, Trash2, MoreVertical } from "lucide-react";
+import { Play, Pause, Plus, ArrowRightLeft, Trash2, MoreVertical, Heart } from "lucide-react";
 import { Song } from "@/types/music";
 import { useMusic } from "@/context/MusicContext";
 import { Button } from "@/components/ui/button";
@@ -21,11 +21,20 @@ interface SongCardProps {
 }
 
 export function SongCard({ song, showTransfer, currentPlaylistId, onAuthRequired, rowIndex = 0, cardType = "song" }: SongCardProps) {
-  const { setCurrentSong, setIsPlaying, playlists, addSongToPlaylist, transferSong, deleteSongFromPlaylist, user, setFilterByArtist, setCurrentView, setSelectedSongDetail } = useMusic();
+  const { setCurrentSong, setIsPlaying, currentSong, isPlaying, playlists, addSongToPlaylist, transferSong, deleteSongFromPlaylist, user, setFilterByArtist, setCurrentView, setSelectedSongDetail, likedSongs, toggleLikeSong } = useMusic();
+
+  const isCurrentSongPlaying = currentSong?.id === song.id && isPlaying;
+  const isSongLiked = likedSongs.includes(String(song.id));
 
   const handlePlay = () => {
-    setCurrentSong(song);
-    setIsPlaying(true);
+    if (currentSong?.id === song.id) {
+      // Toggle play/pause if same song
+      setIsPlaying(!isPlaying);
+    } else {
+      // Play new song
+      setCurrentSong(song);
+      setIsPlaying(true);
+    }
     console.log("Playing:", song.title, song.url);
   };
 
@@ -59,7 +68,11 @@ export function SongCard({ song, showTransfer, currentPlaylistId, onAuthRequired
               className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300"
             >
               <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-amber-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
-                <Play className="h-5 w-5 text-white fill-white ml-0.5" />
+                {isCurrentSongPlaying ? (
+                  <Pause className="h-5 w-5 text-white fill-white" />
+                ) : (
+                  <Play className="h-5 w-5 text-white fill-white ml-0.5" />
+                )}
               </div>
             </button>
           </div>
@@ -147,7 +160,11 @@ export function SongCard({ song, showTransfer, currentPlaylistId, onAuthRequired
                 className="absolute inset-0 w-full h-full rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/30 hover:bg-black/40"
               >
                 <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
-                  <Play className="h-5 w-5 text-black fill-black -ml-1 -mt-0.5" />
+                  {isCurrentSongPlaying ? (
+                    <Pause className="h-5 w-5 text-black fill-black" />
+                  ) : (
+                    <Play className="h-5 w-5 text-black fill-black -ml-1 -mt-0.5" />
+                  )}
                 </div>
               </button>
             </div>
@@ -209,10 +226,18 @@ export function SongCard({ song, showTransfer, currentPlaylistId, onAuthRequired
             e.stopPropagation();
             handlePlay();
           }}
-          className="absolute bottom-3 right-3 w-12 h-12 bg-gradient-to-r from-orange-500 to-amber-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500 shadow-xl hover:shadow-2xl hover:scale-110 active:scale-95"
-          title="Play song"
+          className={`absolute bottom-3 right-3 w-12 h-12 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500 shadow-xl hover:shadow-2xl hover:scale-110 active:scale-95 ${
+            isCurrentSongPlaying
+              ? "bg-gradient-to-r from-green-500 to-emerald-500"
+              : "bg-gradient-to-r from-orange-500 to-amber-500"
+          }`}
+          title={isCurrentSongPlaying ? "Pause song" : "Play song"}
         >
-          <Play className="h-5 w-5 text-white fill-white ml-1" />
+          {isCurrentSongPlaying ? (
+            <Pause className="h-5 w-5 text-white fill-white" />
+          ) : (
+            <Play className="h-5 w-5 text-white fill-white ml-1" />
+          )}
         </button>
       </div>
 
@@ -225,6 +250,24 @@ export function SongCard({ song, showTransfer, currentPlaylistId, onAuthRequired
       </button>
 
       <div className="flex items-center gap-2 mt-3 opacity-0 group-hover:opacity-100 transition-all duration-300">
+        {/* Like/Unlike Button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className={`h-8 w-8 transition-all duration-200 hover:scale-110 active:scale-95 ${
+            isSongLiked 
+              ? "bg-red-500/20 text-red-500 hover:bg-red-500/30" 
+              : "hover:bg-red-500/20 hover:text-red-400"
+          }`}
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleLikeSong(String(song.id));
+          }}
+          title={isSongLiked ? "Unlike song" : "Like song"}
+        >
+          <Heart className={`h-4 w-4 ${isSongLiked ? "fill-current" : ""}`} />
+        </Button>
+
         {/* Add to Playlist */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

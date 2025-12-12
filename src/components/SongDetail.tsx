@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { ArrowLeft, Play, Plus, MoreVertical, Heart } from "lucide-react";
+import { ArrowLeft, Play, Pause, Plus, MoreVertical, Heart } from "lucide-react";
 import { Song } from "@/types/music";
 import { useMusic } from "@/context/MusicContext";
 import { Button } from "@/components/ui/button";
@@ -10,8 +10,7 @@ interface SongDetailProps {
 }
 
 export function SongDetail({ song, onAuthRequired }: SongDetailProps) {
-  const { songs, setCurrentSong, setIsPlaying, user, setCurrentView } = useMusic();
-  const [isLiked, setIsLiked] = useState(false);
+  const { songs, setCurrentSong, setIsPlaying, user, setCurrentView, likedSongs, toggleLikeSong, currentSong, isPlaying } = useMusic();
   const [showLyrics, setShowLyrics] = useState(true);
 
   // Get all songs by the same artist
@@ -20,6 +19,8 @@ export function SongDetail({ song, onAuthRequired }: SongDetailProps) {
       .filter((s) => s.artist === song.artist && s.id !== song.id)
       .slice(0, 4);
   }, [songs, song]);
+
+  const isLiked = likedSongs.includes(String(song.id));
 
   const handlePlay = () => {
     setCurrentSong(song);
@@ -35,11 +36,7 @@ export function SongDetail({ song, onAuthRequired }: SongDetailProps) {
   };
 
   const handleLike = () => {
-    if (!user) {
-      onAuthRequired?.();
-      return;
-    }
-    setIsLiked(!isLiked);
+    toggleLikeSong(String(song.id));
   };
 
   return (
@@ -74,11 +71,33 @@ export function SongDetail({ song, onAuthRequired }: SongDetailProps) {
               {/* Play Button Overlay */}
               <div className="mt-6 flex gap-3">
                 <button
-                  onClick={handlePlay}
-                  className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-full py-3 font-bold flex items-center justify-center gap-2 transition-all duration-300 shadow-lg hover:shadow-xl"
+                  onClick={() => {
+                    if (currentSong?.id === song.id) {
+                      // Toggle play/pause if same song
+                      setIsPlaying(!isPlaying);
+                    } else {
+                      // Play new song
+                      setCurrentSong(song);
+                      setIsPlaying(true);
+                    }
+                  }}
+                  className={`flex-1 rounded-full py-3 font-bold flex items-center justify-center gap-2 transition-all duration-300 shadow-lg hover:shadow-xl ${
+                    currentSong?.id === song.id && isPlaying
+                      ? "bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
+                      : "bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600"
+                  } text-white`}
                 >
-                  <Play className="h-5 w-5 fill-current" />
-                  Play
+                  {currentSong?.id === song.id && isPlaying ? (
+                    <>
+                      <Pause className="h-5 w-5 fill-current" />
+                      Pause
+                    </>
+                  ) : (
+                    <>
+                      <Play className="h-5 w-5 fill-current" />
+                      Play
+                    </>
+                  )}
                 </button>
                 <button
                   onClick={handleLike}
@@ -211,9 +230,30 @@ export function SongDetail({ song, onAuthRequired }: SongDetailProps) {
         {song.lyrics && (
           <section className="mb-16">
             <h2 className="text-3xl font-black text-white mb-6">Lyrics</h2>
-            <div className="bg-gradient-to-br from-surface-hover/30 to-surface-hover/10 border border-orange-500/20 rounded-xl p-8 md:p-12">
-              <div className="text-white/90 text-lg leading-relaxed whitespace-pre-wrap font-medium">
-                {song.lyrics}
+            <div className="bg-gradient-to-br from-orange-500/5 via-surface-hover/20 to-surface-hover/10 border border-orange-500/30 rounded-2xl p-8 md:p-12 backdrop-blur-sm">
+              <div className="text-white/90 text-lg leading-relaxed whitespace-pre-wrap space-y-3">
+                {song.lyrics.split('\n').map((line, index) => {
+                  // Check if line contains bracketed section headers like [Chorus], [Verse], etc.
+                  const isSectionHeader = /^\s*\[.+\]\s*$/.test(line);
+                  
+                  if (isSectionHeader) {
+                    return (
+                      <div
+                        key={index}
+                        className="text-orange-400 font-bold text-lg tracking-wide my-4 uppercase"
+                      >
+                        {line}
+                      </div>
+                    );
+                  }
+                  
+                  // Regular lyrics line
+                  return (
+                    <div key={index} className="font-medium">
+                      {line || '\u200B'}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </section>

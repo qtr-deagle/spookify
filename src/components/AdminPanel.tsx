@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { X, Users, Music, BarChart3, Settings, Trash2, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { LyricsEditor } from "./LyricsEditor";
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -9,7 +8,7 @@ interface AdminPanelProps {
 }
 
 export function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
-  const [activeTab, setActiveTab] = useState<"users" | "content" | "lyrics" | "stats">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "content" | "stats">("users");
 
   if (!isOpen) return null;
 
@@ -42,7 +41,6 @@ export function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
             {[
               { id: "users" as const, label: "Users", icon: Users },
               { id: "content" as const, label: "Content", icon: Music },
-              { id: "lyrics" as const, label: "Lyrics", icon: Music },
               { id: "stats" as const, label: "Statistics", icon: BarChart3 },
             ].map(({ id, label, icon: Icon }) => (
               <button
@@ -117,10 +115,7 @@ export function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
               <p className="text-sm text-muted-foreground mt-4">
                 🎵 Content management features coming soon: upload songs, manage playlists, delete inappropriate content
               </p>
-            
-
-          {/* Lyrics Tab */}
-          {activeTab === "lyrics" && <LyricsEditor />}</div>
+            </div>
           )}
 
           {/* Statistics Tab */}

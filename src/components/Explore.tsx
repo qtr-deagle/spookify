@@ -347,6 +347,9 @@ export function Explore({ onAuthRequired }: { onAuthRequired?: () => void }) {
         </div>
       </section>
 
+      {/* Premium CTA Section */}
+      <PremiumCTA />
+
       {/* Trending Artists Section */}
       {genres.length > 0 && (
         <section className="mb-14">
@@ -424,5 +427,40 @@ function GenreCard({ genre, onSelectGenre }: GenreCardProps) {
         )}
       </div>
     </button>
+  );
+}
+
+function PremiumCTA() {
+  const { user, setCurrentView } = useMusic();
+
+  // Only show CTA for free users
+  if (user?.subscription === "premium" || user?.subscription === "pro") {
+    return null;
+  }
+
+  return (
+    <section className="mb-14">
+      <div className="bg-gradient-to-r from-orange-500/20 to-amber-500/10 border-2 border-orange-500/40 rounded-2xl p-8 md:p-12 backdrop-blur-sm">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          <div>
+            <div className="flex items-center gap-3 mb-3">
+              <Zap className="h-8 w-8 text-orange-500" />
+              <h3 className="text-2xl md:text-3xl font-black text-white">
+                Upgrade to Premium
+              </h3>
+            </div>
+            <p className="text-white/70 max-w-2xl">
+              Enjoy ad-free listening, offline downloads, and exclusive content. Get the best audio quality and skip songs without limits.
+            </p>
+          </div>
+          <Button
+            onClick={() => setCurrentView("pricing")}
+            className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-8 py-3 rounded-full font-bold whitespace-nowrap shadow-lg hover:shadow-xl transition-all flex-shrink-0"
+          >
+            View Plans
+          </Button>
+        </div>
+      </div>
+    </section>
   );
 }
